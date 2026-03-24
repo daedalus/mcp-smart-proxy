@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mcp-smart-proxy"
+version = "0.1.0"
+description = "Token-efficient MCP server gateway with semantic tool search"
+requires-python = ">=3.11"
+dependencies = [
+    "mcp>=1.0.0",
+    "httpx[asyncio]>=0.27.0",
+    "sentence-transformers>=3.0.0",
+    "chromadb>=0.5.0",
+    "pyyaml>=6.0",
+    "click>=8.1.0",
+    "structlog>=24.0.0",
+    "pydantic>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "black>=24.0.0",
+    "ruff>=0.4.0",
+    "flake8>=7.0.0",
+]
+openai = ["openai>=1.0.0"]
+qdrant = ["qdrant-client>=1.9.0"]
+pgvector = ["asyncpg>=0.29.0", "pgvector>=0.2.0"]
+
+[project.scripts]
+mcp-smart-proxy = "mcp_smart_proxy.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+select = ["E", "F", "W", "I", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
+asyncio_mode = "auto"
