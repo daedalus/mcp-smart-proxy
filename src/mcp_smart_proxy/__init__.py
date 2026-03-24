@@ -1,4 +1,4 @@
-__version__ = "0.1.0.2"
+__version__ = "0.1.0.3"
 
 from mcp_smart_proxy.config import (
     EmbeddingConfig,
