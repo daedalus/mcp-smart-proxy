@@ -1,5 +1,8 @@
 # mcp-smart-proxy
 
+mcp-name: io.github.daedalus/mcp-smart-proxy
+
+
 > Token-efficient MCP server gateway with semantic tool search
 
 ## Install
@@ -46,7 +49,3 @@ black src/ tests/
 ruff check src/ tests/
 flake8 src/ tests/ --max-line-length=88 --extend-ignore=E203,W503
 ```
-
-## Version
-
-v0.1.0
