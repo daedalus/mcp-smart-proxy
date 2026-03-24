@@ -1,0 +1,20 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.daedalus/mcp-smart-prox",
+  "description": "An MCP server that provides a smart proxy to other mcp servers",
+  "repository": {
+    "url": "https://github.com/daedalus/mcp-smart-proxy",
+    "source": "github"
+  },
+  "version": "0.1.0.2",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "mcp-smart-proxy",
+      "version": "0,1.0.2",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}
