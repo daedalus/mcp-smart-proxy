@@ -6,12 +6,12 @@
     "url": "https://github.com/daedalus/mcp-smart-proxy",
     "source": "github"
   },
-  "version": "0.1.0.4",
+  "version": "0.1.1",
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "mcp-smart-proxy",
-      "version": "0.1.0.4",
+      "version": "0.1.1",
       "transport": {
         "type": "stdio"
       }

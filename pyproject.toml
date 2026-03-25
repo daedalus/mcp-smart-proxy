@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mcp-smart-proxy"
-version = "0.1.0.4"
+version = "0.1.1"
 description = "Token-efficient MCP server gateway with semantic tool search"
 requires-python = ">=3.11"
 readme = "README.md"
