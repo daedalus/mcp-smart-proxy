@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import signal
 from pathlib import Path
 
 import click
@@ -9,6 +10,7 @@ import structlog
 from mcp_smart_proxy import __version__
 from mcp_smart_proxy.config import load_config, validate_config
 from mcp_smart_proxy.server import MCPSmartProxyServer
+from mcp_smart_proxy.watcher import UpstreamWatcher
 
 structlog.configure(
     processors=[
@@ -35,30 +37,76 @@ def cli():
     type=click.Path(exists=True),
     help="Path to proxy.yaml config file",
 )
-def serve(config: str):
+@click.option(
+    "--watch",
+    "-w",
+    type=click.Path(exists=True),
+    help="Directory to watch for MCP server configurations",
+)
+def serve(config: str, watch: str | None):
     config_path = Path(config)
     cfg = load_config(config_path)
     server = MCPSmartProxyServer(cfg)
-    asyncio.run(_serve_async(server, cfg))
+    watcher = None
+    if watch:
+        watch_dir = Path(watch)
+        upstream_manager = server.get_upstream_manager()
+        watcher = UpstreamWatcher(
+            watch_dir,
+            on_upstream_added=upstream_manager.add_upstream,
+            on_upstream_removed=upstream_manager.remove_upstream,
+        )
+        watcher.start()
+    asyncio.run(_serve_async(server, cfg, watcher))
 
 
-async def _serve_async(server: MCPSmartProxyServer, cfg):
+async def _serve_async(
+    server: MCPSmartProxyServer, cfg, watcher: UpstreamWatcher | None = None
+):
     from mcp.server import InitializationOptions
     from mcp.server.stdio import stdio_server
 
     await server.initialize()
     mcp_server = server.get_mcp_server()
+
+    stop_event = asyncio.Event()
+
+    def signal_handler(sig, frame):
+        logger.info("shutdown_signal_received")
+        stop_event.set()
+
+    loop = asyncio.get_event_loop()
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        loop.add_signal_handler(sig, lambda s=sig: signal_handler(s, None))
+
+    async def wait_for_stop():
+        await stop_event.wait()
+
     async with stdio_server(mcp_server) as (read_stream, write_stream):
         initialization_options = InitializationOptions(
             server_name="mcp-smart-proxy",
             server_version=__version__,
             capabilities={},
         )
-        await mcp_server.run(
-            read_stream,
-            write_stream,
-            initialization_options,
+        server_task = asyncio.create_task(
+            mcp_server.run(read_stream, write_stream, initialization_options)
         )
+        watcher_task = asyncio.create_task(wait_for_stop()) if watcher else None
+
+        done, pending = await asyncio.wait(
+            [server_task] + ([watcher_task] if watcher_task else []),
+            return_when=asyncio.FIRST_COMPLETED,
+        )
+
+        for task in pending:
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+
+    if watcher:
+        watcher.stop()
     await server.shutdown()
 
 

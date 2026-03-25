@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from typing import Any
 
 import structlog
@@ -21,10 +22,27 @@ class UpstreamManager:
         self._configs: dict[str, UpstreamConfig] = {}
 
     def add_upstream(self, config: UpstreamConfig) -> None:
+        if config.id in self._configs:
+            logger.warning("upstream_already_exists", server_id=config.id)
+            return
         self._configs[config.id] = config
         logger.info(
             "upstream_configured", server_id=config.id, transport=config.transport
         )
+
+    def remove_upstream(self, server_id: str) -> None:
+        if server_id not in self._configs:
+            logger.warning("upstream_not_found", server_id=server_id)
+            return
+        if server_id in self._clients:
+            client = self._clients.pop(server_id)
+            try:
+                loop = asyncio.get_running_loop()
+                loop.create_task(client.disconnect())
+            except RuntimeError:
+                pass
+        del self._configs[server_id]
+        logger.info("upstream_removed", server_id=server_id)
 
     async def connect_all(self) -> None:
         for server_id, config in self._configs.items():

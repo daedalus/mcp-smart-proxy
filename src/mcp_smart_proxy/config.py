@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 from enum import StrEnum
 from pathlib import Path
@@ -124,7 +125,10 @@ def load_config(path: str | Path) -> Config:
         raise FileNotFoundError(f"Config file not found: {path}")
 
     with open(path) as f:
-        config_dict = yaml.safe_load(f) or {}
+        if path.suffix.lower() == ".json":
+            config_dict = json.load(f) or {}
+        else:
+            config_dict = yaml.safe_load(f) or {}
 
     config_dict = _apply_env_overrides(config_dict)
     return Config(**config_dict)

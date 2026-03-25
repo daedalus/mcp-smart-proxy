@@ -24,16 +24,21 @@ server = MCPSmartProxyServer(config)
 
 ```bash
 mcp-smart-proxy serve --config proxy.yaml
+mcp-smart-proxy serve --config proxy.yaml --watch ./servers/
 mcp-smart-proxy index --config proxy.yaml
 mcp-smart-proxy status --config proxy.yaml
 mcp-smart-proxy validate --config proxy.yaml
 ```
 
+The `--watch` option monitors a directory for `.yaml`, `.yml`, or `.json` files containing
+upstream server configurations. Add, modify, or remove files to dynamically update the
+available servers at runtime.
+
 ## API
 
 ### Config
 
-- `load_config(path)` - Load configuration from YAML file
+- `load_config(path)` - Load configuration from YAML or JSON file
 - `validate_config(path)` - Validate configuration file
 
 ### Server
@@ -45,7 +50,7 @@ mcp-smart-proxy validate --config proxy.yaml
 ```bash
 pip install -e ".[dev]"
 pytest
-black src/ tests/
+ruff format src/ tests/
 ruff check src/ tests/
-flake8 src/ tests/ --max-line-length=88 --extend-ignore=E203,W503
+mypy src/
 ```

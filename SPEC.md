@@ -33,8 +33,11 @@ forwards the call, handles the MCP wire protocol, and streams the result back.
 - Pluggable embedding backend (default: sentence-transformers `all-MiniLM-L6-v2`, locally,
   no external API required).
 - Pluggable vector store backend (default: ChromaDB in-process; optional: Qdrant, pgvector).
-- Configuration via a single YAML/TOML file (`proxy.yaml`) and environment variables.
+- Configuration via a single YAML/JSON file (`proxy.yaml` or `proxy.json`) and environment variables.
 - CLI entry point `mcp-smart-proxy` with `serve`, `index`, `status`, and `validate` subcommands.
+- Dynamic upstream server loading via `--watch` / `-w` option: monitor a directory for new
+  `.yaml`, `.yml`, or `.json` files containing upstream server configurations, load them
+  automatically at runtime without restart.
 - Structured JSON logging (configurable level).
 - Graceful shutdown: drain in-flight upstream calls before exit.
 - Health/readiness endpoint on a dedicated HTTP port (for container orchestration).
@@ -47,8 +50,6 @@ forwards the call, handles the MCP wire protocol, and streams the result back.
 - Tool result caching / deduplication.
 - Multi-tenant isolation.
 - GUI or web dashboard.
-- Dynamic hot-reload of upstream server list without restart (refresh via `list(refresh=True)`
-  is supported, but adding/removing servers requires restart).
 - Support for MCP resource endpoints (only `tools/*` namespace is proxied).
 
 ---
@@ -173,9 +174,10 @@ transparently at the protocol level.
 | Command | Description |
 |---|---|
 | `mcp-smart-proxy serve` | Start the proxy server (STDIO or SSE, per config). |
+| `mcp-smart-proxy serve --watch <dir>` | Start the proxy and watch a directory for dynamic upstream configs. |
 | `mcp-smart-proxy index` | Re-introspect all upstreams and rebuild the vector index, then exit. |
 | `mcp-smart-proxy status` | Print upstream connectivity and index stats, then exit. |
-| `mcp-smart-proxy validate` | Validate `proxy.yaml` schema and exit 0/1. |
+| `mcp-smart-proxy validate` | Validate `proxy.yaml` (or `.json`) schema and exit 0/1. |
 
 ---
 
@@ -220,6 +222,33 @@ vector_store:
 
 Environment variable overrides follow the pattern `MCP_PROXY_<SECTION>_<KEY>` (uppercase,
 underscores). Example: `MCP_PROXY_PROXY_LOG_LEVEL=DEBUG`.
+
+### Dynamic Upstream Configuration (--watch directory)
+
+When using `--watch <directory>`, the proxy monitors the specified directory for new
+`.yaml`, `.yml`, or `.json` files. Each file should contain a single upstream server
+configuration (not an array):
+
+```yaml
+# e.g., servers/github.yaml
+id: github
+display_name: GitHub MCP
+transport: sse
+url: http://localhost:3001/sse
+```
+
+```json
+// e.g., servers/filesystem.json
+{
+  "id": "filesystem",
+  "display_name": "Filesystem MCP",
+  "transport": "stdio",
+  "command": ["npx", "-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+}
+```
+
+Adding, modifying, or removing files in the watched directory dynamically adds,
+updates, or removes upstream servers at runtime.
 
 ---
 
@@ -327,6 +356,7 @@ negotiation layer in `upstream/client.py`.
 | `click` | CLI |
 | `structlog` | Structured JSON logging |
 | `pydantic >= 2` | Config and result model validation |
+| `watchdog` | File system watching for dynamic upstream loading |
 
 Optional / pluggable:
 
@@ -352,9 +382,10 @@ mcp-smart-proxy/
 │       ├── __init__.py          # version + public re-exports
 │       ├── __main__.py          # python -m mcp_smart_proxy entry
 │       ├── cli.py               # click CLI (serve/index/status/validate)
-│       ├── config.py            # pydantic config models + YAML loader
+│       ├── config.py            # pydantic config models + YAML/JSON loader
 │       ├── server.py            # MCP server: exposes list + search tools
 │       ├── router.py            # routes tool calls to correct upstream
+│       ├── watcher.py           # directory watcher for dynamic upstream loading
 │       ├── upstream/
 │       │   ├── __init__.py
 │       │   ├── client.py        # async MCP client (STDIO + SSE)
