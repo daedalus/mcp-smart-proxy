@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mcp-smart-proxy"
-version = "0.1.0.4"
+version = "0.1.2"
 description = "Token-efficient MCP server gateway with semantic tool search"
 requires-python = ">=3.11"
 readme = "README.md"
@@ -18,6 +18,7 @@ dependencies = [
     "structlog>=24.0.0",
     "pydantic>=2.0.0",
     "watchdog>=4.0.0",
+    "uvicorn>=0.30.0",
 ]
 
 [project.optional-dependencies]
