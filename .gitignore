@@ -16,7 +16,12 @@ env/
 .mypy_cache/
 htmlcov/
 .coverage
+.coverage.*
 *.log
 .DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
 .mcp_proxy_index/
 test_index/

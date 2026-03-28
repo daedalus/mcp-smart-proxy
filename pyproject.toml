@@ -1,13 +1,17 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "mcp-smart-proxy"
 version = "0.1.2"
 description = "Token-efficient MCP server gateway with semantic tool search"
-requires-python = ">=3.11"
 readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "Dario Clavijo", email = "clavijodario@gmail.com"}
+]
 dependencies = [
     "mcp>=1.0.0",
     "httpx[asyncio]>=0.27.0",
@@ -23,32 +27,78 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=8.0.0",
-    "pytest-asyncio>=0.23.0",
-    "black>=24.0.0",
-    "ruff>=0.4.0",
-    "flake8>=7.0.0",
+    "ruff",
+    "mypy",
+    "hatch",
 ]
+test = [
+    "pytest",
+    "pytest-cov",
+    "pytest-mock",
+    "pytest-asyncio",
+    "hypothesis",
+]
+lint = [
+    "ruff",
+    "mypy",
+]
+all = ["mcp-smart-proxy[dev,test,lint]"]
 openai = ["openai>=1.0.0"]
 qdrant = ["qdrant-client>=1.9.0"]
 pgvector = ["asyncpg>=0.29.0", "pgvector>=0.2.0"]
+mcp = ["fastmcp"]
 
 [project.scripts]
-mcp-smart-proxy = "mcp_smart_proxy.cli:main"
+mcp-smart-proxy = "mcp_smart_proxy.__main__:main"
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[project.urls]
+Homepage = "https://github.com/daedalus/mcp-smart-proxy"
+Repository = "https://github.com/daedalus/mcp-smart-proxy"
+Issues = "https://github.com/daedalus/mcp-smart-proxy/issues"
 
-[tool.black]
-line-length = 88
-target-version = ["py311"]
+[tool.hatch.build.targets.wheel]
+packages = ["src/mcp_smart_proxy"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/mcp_smart_proxy"]
 
 [tool.ruff]
 line-length = 88
 target-version = "py311"
-select = ["E", "F", "W", "I", "UP"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "N", "C4"]
+ignore = ["E501", "N802", "N803", "N806"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+check_untyped_defs = false
+disable_error_code = ["attr-defined", "arg-type", "assignment", "misc", "override", "call-overload", "index", "valid-type", "var-annotated", "annotation-unchecked"]
+
+[tool.coverage.run]
+source = ["src"]
+branch = true
+
+[tool.coverage.report]
+exclude = ["tests/*", "*/__init__.py"]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-v --tb=short"
+addopts = "-v --tb=short --cov=src --cov-fail-under=80"
+filterwarnings = ["ignore::DeprecationWarning"]
 asyncio_mode = "auto"

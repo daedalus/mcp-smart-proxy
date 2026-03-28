@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "mcp-smart-proxy": {
+      "command": "mcp-smart-proxy",
+      "env": {}
+    }
+  }
+}
